@@ -40,30 +40,30 @@ const mimeTypes : {[key:string] : string}  = {
 
 
 export default class _Router {
-routes: { GET: Map<string,Function>; POST: Map<string,Function>; };
+routes: { GET: Array<{ruta:string,callback:Function}>; POST: Array<{ruta:string,callback:Function}>; };
 pageError: string;
 
 constructor(){
-this.routes = {GET:new Map(),POST:new Map()};  
-this.pageError  = "./error.html" 
+this.routes = {GET:[],POST:[]};  
+this.pageError  = "./error.html" ;
  }
 
 
 
 
 get = (url : string,callback : Function) =>{
-this.routes.GET.set(url,callback);
+this.routes.GET.push({ruta:url,callback})
 }
 
 post = (url : string,callback : Function) =>{
-this.routes.POST.set(url,callback);
+this.routes.POST.push({ruta:url,callback})
 }
 
 
 
 async resolve(req:Request) : Promise<Response>{
 
-const url = new URL(req.url).pathname
+let url = new URL(req.url).pathname
 //analize a request a obtent the params 
 
 
@@ -87,23 +87,130 @@ return new  Response(textFile,{status:200,headers:{"content-type":mimeType}})
 
 
 
-const callback = this.routes.GET.get(url);
+for (const route of this.routes.GET) {
+    let isCorrect = true
 
-if(callback){
-return callback(req);
+
+
+const {ruta,callback} = route
+
+let params : {[key:string] : string } = {};
+    
+//verify if the url route is a match with the url request
+//firts split the url route by "/"
+const routeSplit = ruta.split("/");
+//then split the url request by "/"
+const urlSplit = url.split("/");
+//then  compare the first element of the routeSplit and the first element of the urlSplit 
+//if they are equals, then the route is a match
+//if the routerSplit is a dinamic  pass;
+console.log(routeSplit)
+console.log(urlSplit)
+if(routeSplit[1].includes(":") && routeSplit.length == urlSplit.length){
+    console.log("dinamic",routeSplit[1],urlSplit[1])
+//if the param,save the param name and the value
+const paramName = routeSplit[1].split(":")[1]
+console.log(paramName)
+params[paramName] = urlSplit[1]
+//analize the rest of the routeSplit and the rest of the urlSplit if they are equals continue,and  if dinamic route save param
+for(let i = 1; i < routeSplit.length; i++){
+
+if(routeSplit[i] == urlSplit[i]){
+
+continue
+
+}else if(routeSplit[i].includes(":")){
+
+const paramName = routeSplit[i].split(":")[1]
+params[paramName] = urlSplit[i]
+
+
+
+}else{
+isCorrect = false
+break
 }
+}
+
+if(isCorrect){
+    Object.assign(req,{params})
+    //create a function netx '
+return callback(req)
+
+}
+
+
+
+
+//si la primera ruta es estatica y tienen el mismo numero de elementos
+}else if(routeSplit[1] == urlSplit[1] && routeSplit.length == urlSplit.length){
+   
+// console.log("static")
+// console.log(routeSplit,urlSplit)
+//analize the rest of the routeSplit and the rest of the urlSplit if they are equals continue,and  if dinamic route save param
+for(let i = 1; i < routeSplit.length; i++){
+if(routeSplit[i] == urlSplit[i]){
+continue     
+}else if(routeSplit[i].includes(":")){
+const paramName = routeSplit[i].split(":")[1]
+params[paramName] = urlSplit[i]
+}else{
+isCorrect = false
+ break
+
+}
+}
+
+if(isCorrect){
+    Object.assign(req,{params})
+    
+    return callback(req)
+
+
+}
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+} 
+
+
+
 
 return PageError()
 
 
-}else if(req.method == "POST"){
+}
 
+else if(req.method == "POST"){
 
-const callback = this.routes.POST.get(url);
+    for (const route of this.routes.POST) {
 
-if(callback){
+const {ruta,callback} = route
+
+if(ruta == url){
+
 return callback(req);
 }
+
+}
+
+
+
+
+
 
 return PageError()
 
@@ -136,3 +243,5 @@ const PageError = () =>{
 return new Response(dataError,{status:404,headers:{"content-type":"text/html"}});
 
 }
+
+
