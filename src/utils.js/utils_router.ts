@@ -1,5 +1,4 @@
 
-const dataError = await  Deno.readTextFile("./public/error.html")
 /** return a page error with html document and status 404 
  * 
  * @returns {Response}
@@ -8,7 +7,7 @@ export  const PageError = (): Response =>  {
 
 
 
-    return new Response(dataError,{status:404,headers:{"content-type":"text/html"}});
+    return new Response("<h1>error page no found</h1>",{status:404,headers:{"content-type":"text/html"}});
     
     }
     

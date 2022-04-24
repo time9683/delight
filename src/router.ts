@@ -40,12 +40,11 @@ export default class Router {
  */
 
 routes: { GET: Array<entryPoint>; POST: Array<{path:string,callback:Function}>; };
-pageError: string;
 static : string
+
 
 constructor(){
 this.routes = {GET:[],POST:[]};  
-this.pageError  = "./error.html" ;
 this.static =  "/public"
 }
 
@@ -92,7 +91,6 @@ const url = new URL(req.url).pathname
 
 
 if(req.method == "GET"){
-console.log({url})
 //verify if the url is a route or a file
 if(regexFile.test(url) &&  ( ("/"+ url.split('/')[1] ===   this.static)  || this.static === '' || this.static === '/')){
 try{
@@ -109,6 +107,7 @@ try{
     return new  Response(readable,{status:200,headers:{"content-type":mimeType}})
 
 }catch{
+ 
 console.error(`%cError 404: File not found ${url}`, "color: red")
 return new Response("",{status:404})
 
