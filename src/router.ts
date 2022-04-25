@@ -39,8 +39,8 @@ export default class Router {
  * 
  */
 
-routes: { GET: Array<entryPoint>; POST: Array<entryPoint>; DELETE: Array<entryPoint>; PUT: Array<entryPoint>;  };
-static : string
+routes: { [GET:string]: Array<entryPoint>; POST: Array<entryPoint>; DELETE: Array<entryPoint>; PUT: Array<entryPoint>;  };
+private static : string
 
 
 constructor(){
@@ -117,6 +117,14 @@ this.routes.PUT.push({path:url,callback,midleware:midleware})
  */
 const url = new URL(req.url).pathname
 
+if(!req.method)   return  new Response("Method not allowed",{status:405})
+
+const listroute = this.routes[req.method]
+
+
+
+// console.log({listroute})
+if(!listroute) return new Response("Method not allowed",{status:405})
 
 
 if(req.method == "GET"){
@@ -143,10 +151,10 @@ return new Response("",{status:404})
 }
 
 }
-
+}
 
 //loop in the routes to find the route
-for (const route of this.routes.GET) {
+for (const route of  listroute) {
 
 const {path,callback,midleware} = route
 const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
@@ -177,133 +185,7 @@ return PageError()
 
 }
 
-else if(req.method == "POST"){
 
-    for (const route of this.routes.POST) {
-
-        const {path,callback,midleware} = route
-        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
-        if(!isCorrect ){
-         continue   
-        }
-        if(isCorrect){
-            Object.assign(req,{params})
-        if(midleware){ 
-            
-        const  info = midleware(req,()=>{})
-        if(info instanceof Response){
-            return info
-        }
-        
-        }
-        const  res =   await  callback(req,()=>{})
-        if(res instanceof Response){
-        return res
-        }
-        continue
-        }
-        
-                
-
-
-
-}
-
-
-
-return PageError()
-
-}else if(req.method ==  "PUT"){
-    for (const route of this.routes.POST) {
-
-        const {path,callback,midleware} = route
-        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
-        if(!isCorrect ){
-         continue   
-        }
-        if(isCorrect){
-            Object.assign(req,{params})
-        if(midleware){ 
-            
-        const  info = midleware(req,()=>{})
-        if(info instanceof Response){
-            return info
-        }
-        
-        }
-        const  res =   await  callback(req,()=>{})
-        if(res instanceof Response){
-        return res
-        }
-        continue
-        }
-        
-        } 
-        
-        
-        
-        
-        
-        
-        
-        return PageError()
-
-
-
-}
-
-else if(req.method ==  "DELETE"){
-    for (const route of this.routes.POST) {
-
-        const {path,callback,midleware} = route
-        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
-        if(!isCorrect ){
-         continue   
-        }
-        if(isCorrect){
-            Object.assign(req,{params})
-        if(midleware){ 
-            
-        const  info = midleware(req,()=>{})
-        if(info instanceof Response){
-            return info
-        }
-        
-        }
-        const  res =   await  callback(req,()=>{})
-        if(res instanceof Response){
-        return res
-        }
-        continue
-        }
-        
-                
-        
-        
-        }
-        
-        
-        
-        return PageError()
-
-
-
-
-}
-
-
-
-
-
-
-
-
-
-
-else{
-return PageError()
-}
-}
 
 
 
