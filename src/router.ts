@@ -39,12 +39,12 @@ export default class Router {
  * 
  */
 
-routes: { GET: Array<entryPoint>; POST: Array<{path:string,callback:Function}>; };
+routes: { GET: Array<entryPoint>; POST: Array<entryPoint>; DELETE: Array<entryPoint>; PUT: Array<entryPoint>;  };
 static : string
 
 
 constructor(){
-this.routes = {GET:[],POST:[]};  
+this.routes = {GET:[],POST:[],DELETE:[],PUT:[]};  
 this.static =  "/public"
 }
 
@@ -68,8 +68,37 @@ this.routes.GET.push({path:url,callback,midleware})
  * @param {string} url - url to  define entry point  request
  * @param {Function} callback - callback function to execute when the url is requested
  */
-post = (url : string,callback : Function) =>{
-this.routes.POST.push({path:url,callback})
+post = (url : string,callback : Function, midleware?:midleware) =>{
+this.routes.POST.push({path:url,callback,midleware})
+}
+
+
+/**add new  entry point to the router in the delete method
+ * 
+ * @function
+ * @param {string} url - url to  define entry point  request
+ * @param {Function} callback - callback function to execute when the url is requested
+ * 
+ * 
+ * 
+*/
+delete = (url : string,callback : Function,midleware?:midleware) =>{
+this.routes.DELETE.push({path:url,callback,midleware})
+}
+
+
+
+/**add new  entry point to the router in the put method
+ * 
+ * @function
+ * @param {string} url - url to  define entry point  request
+ * @param {Function} callback - callback function to execute when the url is requested
+ * 
+ * 
+ * 
+*/
+put = (url : string,callback : Function,midleware?:midleware) =>{
+this.routes.PUT.push({path:url,callback,midleware:midleware})
 }
 
 
@@ -152,17 +181,29 @@ else if(req.method == "POST"){
 
     for (const route of this.routes.POST) {
 
-const {path,callback} = route
-const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
-if(!isCorrect ){
- continue   
-}
-if(isCorrect){
-    Object.assign(req,{params})
- return callback(req)
-}
-
-
+        const {path,callback,midleware} = route
+        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
+        if(!isCorrect ){
+         continue   
+        }
+        if(isCorrect){
+            Object.assign(req,{params})
+        if(midleware){ 
+            
+        const  info = midleware(req,()=>{})
+        if(info instanceof Response){
+            return info
+        }
+        
+        }
+        const  res =   await  callback(req,()=>{})
+        if(res instanceof Response){
+        return res
+        }
+        continue
+        }
+        
+                
 
 
 
@@ -172,7 +213,94 @@ if(isCorrect){
 
 return PageError()
 
-}else{
+}else if(req.method ==  "PUT"){
+    for (const route of this.routes.POST) {
+
+        const {path,callback,midleware} = route
+        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
+        if(!isCorrect ){
+         continue   
+        }
+        if(isCorrect){
+            Object.assign(req,{params})
+        if(midleware){ 
+            
+        const  info = midleware(req,()=>{})
+        if(info instanceof Response){
+            return info
+        }
+        
+        }
+        const  res =   await  callback(req,()=>{})
+        if(res instanceof Response){
+        return res
+        }
+        continue
+        }
+        
+        } 
+        
+        
+        
+        
+        
+        
+        
+        return PageError()
+
+
+
+}
+
+else if(req.method ==  "DELETE"){
+    for (const route of this.routes.POST) {
+
+        const {path,callback,midleware} = route
+        const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
+        if(!isCorrect ){
+         continue   
+        }
+        if(isCorrect){
+            Object.assign(req,{params})
+        if(midleware){ 
+            
+        const  info = midleware(req,()=>{})
+        if(info instanceof Response){
+            return info
+        }
+        
+        }
+        const  res =   await  callback(req,()=>{})
+        if(res instanceof Response){
+        return res
+        }
+        continue
+        }
+        
+                
+        
+        
+        }
+        
+        
+        
+        return PageError()
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+else{
 return PageError()
 }
 }
