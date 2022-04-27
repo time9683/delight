@@ -44,7 +44,6 @@ export  const PageError = (): Response =>  {
         const rutasplit = ruta.split("/")
         const params : {[key:string] : string } = {};
         let isCorrect = true;
-    //  console.log({urlsplit,rutasplit})
         if(rutasplit[1].includes(":") && (rutasplit.length === urlsplit.length) || (ruta  ==  '/:') ){
          
             const paramName = rutasplit[1].split(":")[1]
@@ -77,17 +76,18 @@ export  const PageError = (): Response =>  {
                     const paramName = rutasplit[i].split(":")[1]
                     params[paramName] = urlsplit[i]
                 }else{
+                    
                     isCorrect = false
                     break
                 }
             }
             if(isCorrect){
+               
                 return {params:params,isCorrect}
            
             }
     
         }
-    
         return {params:{},isCorrect:false}
     
     

@@ -14,10 +14,13 @@ interface midleware {
 
 interface  entryPoint {
         path : string,
-        callback : Function,
+        callback : Function | Router , 
         midleware? : midleware  
         next?  :  ()=>void  
 }
+ 
+
+
 
 
 /**
@@ -59,7 +62,7 @@ this.static =  "/public"
  * 
  * 
 */
-get = (url : string,callback : Function,midleware?:midleware)  =>{
+get = (url : string,callback : Function | Router ,midleware?:midleware)  =>{
 this.routes.GET.push({path:url,callback,midleware})
 }
 /** add new entry point to the router in the post method 
@@ -68,7 +71,7 @@ this.routes.GET.push({path:url,callback,midleware})
  * @param {string} url - url to  define entry point  request
  * @param {Function} callback - callback function to execute when the url is requested
  */
-post = (url : string,callback : Function, midleware?:midleware) =>{
+post = (url : string,callback : Function | Router, midleware?:midleware) =>{
 this.routes.POST.push({path:url,callback,midleware})
 }
 
@@ -109,13 +112,19 @@ this.routes.PUT.push({path:url,callback,midleware:midleware})
  * @returns {Response} - response object
  *  
  *   */ 
-  resolve = async (req:Request) : Promise<Response> =>{
+  resolve = async (req:any) : Promise<Response> =>{
 
 
 /**
  * is a pathname of the request
  */
-const url = new URL(req.url).pathname
+let url = new URL(req.url).pathname
+
+if(req.child === true && req.child !== undefined){
+    url =  url.split("/")[2] === undefined ? "/" :  "/" + url.split("/")[2] 
+
+}
+
 
 if(!req.method)   return  new Response("Method not allowed",{status:405})
 
@@ -123,12 +132,10 @@ const listroute = this.routes[req.method]
 
 
 
-// console.log({listroute})
 if(!listroute) return new Response("Method not allowed",{status:405})
 
 
 if(req.method == "GET"){
-//verify if the url is a route or a file
 if(regexFile.test(url) &&  ( ("/"+ url.split('/')[1] ===   this.static)  || this.static === '' || this.static === '/')){
 try{
         const mimeType =  getMimeType(url)
@@ -138,7 +145,6 @@ try{
         if(mimeType.includes("video")){
             return  streamingVideo(req,url)
         }
-//joint the urls
     const file = await Deno.open(`.${url}`,{read:true})
     const readable =  readableStreamFromReader(file) 
     return new  Response(readable,{status:200,headers:{"content-type":mimeType}})
@@ -153,22 +159,61 @@ return new Response("",{status:404})
 }
 }
 
+
+
+
+
+
+
 //loop in the routes to find the route
 for (const route of  listroute) {
+    let url = new URL(req.url).pathname
 
+    if(req.child === true && req.child !== undefined){
+            url =  url.split("/")[2] === undefined ? "/" :  "/" + url.split("/")[2] 
+        
+        }
+
+
+    
 const {path,callback,midleware} = route
-const {isCorrect,params} = analizeUrlParams(new URL(req.url).pathname,path)
+
+if(callback instanceof Router)
+
+{
+const urlsplit = url.split("/")
+urlsplit.pop()
+url = urlsplit.join("/")
+    
+}
+
+
+
+const {isCorrect,params} = analizeUrlParams(url,path)
+
+
 if(!isCorrect ){
  continue   
 }
+
+
+
 if(isCorrect){
+
+if(callback instanceof Router){
+   Object.assign(req,{child:true})
+    return callback.resolve(req)
+}
+
+
     Object.assign(req,{params})
 if(midleware){ 
-    
 const  info = midleware(req,()=>{})
 if(info instanceof Response){
     return info
 }
+
+
 
 }
 const  res =   await  callback(req,()=>{})
@@ -189,7 +234,7 @@ return PageError()
 
 
 
-use(path:string  ,callback:Function){
+use(path:string  ,callback:Function | Router ){
 
 this.get(path,callback)
 this.post(path,callback)
