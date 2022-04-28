@@ -182,20 +182,18 @@ if(callback instanceof Router)
 
 {
 const urlsplit = url.split("/")
+if(urlsplit.length > 2){ 
 urlsplit.pop()
-url = urlsplit.join("/")
-    
 }
-
+url = urlsplit.join("/")
+}
 
 
 const {isCorrect,params} = analizeUrlParams(url,path)
 
-
 if(!isCorrect ){
  continue   
 }
-
 
 
 if(isCorrect){

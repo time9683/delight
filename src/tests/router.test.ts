@@ -1,11 +1,12 @@
 import { assertEquals } from "https://deno.land/std@0.136.0/testing/asserts.ts";
 import   App from "../app.ts";
+import  Router  from "../router.ts";
 
 Deno.test({name:"App router",fn: async  (t) =>{
 
 
     const app = new App()
-
+    const router = new Router()
 app.get("/",(_req:Request)=>{
 
 return new Response("hello world",{headers:{"content-type":"text/plain"}})
@@ -46,6 +47,32 @@ app.post("/registre/:type",async (req:any)=>{
 
 })
 
+router.get("/",(req:any)=>{
+
+
+
+
+
+
+return new Response("son router",{headers:{"content-type":"text/plain"}})
+
+
+})
+
+
+
+router.get("/root",(_req:any)=>{
+   
+    
+    return new Response("son router admin",{headers:{"content-type":"text/plain"}})
+
+})
+
+
+app.use("/son",router)
+
+
+
 
 
 app.listen(4000)
@@ -78,7 +105,7 @@ await t.step({name:"get Reponse dinamic url in beginning /:id/admin",fn: async (
 await t.step({name:"get to not existing entry point",fn: async () =>{
 
     const  res = await   fetch('http://127.0.0.1:4000/not/existing');
-    const body = await res.text();
+    const _body = await res.text();
     assertEquals(res.status,404)
     assertEquals(res.headers.get("content-type"),"text/html")
 
@@ -115,6 +142,29 @@ assertEquals(body,"registro completado name:juan  age:20 type:admin")
 },sanitizeOps:false,sanitizeResources:false})
 
 
+await t.step({name:"post to route in externet Router",fn: async () =>{
+
+const res = await   fetch('http://127.0.0.1:4000/son');
+const body = await res.text();
+assertEquals(res.status,200)
+assertEquals(res.headers.get("content-type"),"text/plain")
+assertEquals(body,"son router")
+
+
+},sanitizeOps:false,sanitizeResources:false})
+
+
+
+await t.step({name:"post to subpath in external router",fn: async () =>{
+
+const res = await   fetch('http://127.0.0.1:4000/son/root');
+const body = await res.text();
+assertEquals(res.status,200)
+assertEquals(res.headers.get("content-type"),"text/plain")
+assertEquals(body,"son router admin")
+
+
+},sanitizeOps:false,sanitizeResources:false})
 
 
 }, sanitizeResources: false,
