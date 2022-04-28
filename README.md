@@ -4,12 +4,28 @@ minimal web framerwork inspired by express.js for deno
 
 
 ``` ts
-import delight from "https://raw.githubusercontent.com/time9683/delight/master/src/app.ts"
+import * as delight from "https://deno.land/x/delight@1.0.0-beta/app.ts";
+import Router from "https://deno.land/x/delight@1.0.0-beta/router.ts";
+
+
 
 const app = new delight()
+const router = new Router()
+
+
+router.get("/",(req:any)=>{
+
+
+return new Response("path admin")
+})
+
+
+app.use("/admin",router)
+
+
 
 app.get('/',(req)=>{
-return new Reponse('hello world')
+return new ReSponse('hello world')
 
 })
 
@@ -36,11 +52,13 @@ app.listen(3000)
 
 
 ## how to use delight
-the simplest way to use it is to import from "https://raw.githubusercontent.com/time9683/delight/master/src/app.ts"
+the simplest way to use it is to import from "https://deno.land/x/delight@1.0.0-beta/app.ts";
+"
 
 
 ``` ts
-import delight from "https://raw.githubusercontent.com/time9683/delight/master/src/app.ts"
+import * as delight from "https://deno.land/x/delight@1.0.0-beta/app.ts";
+
 ```
 
 
