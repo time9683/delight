@@ -5,7 +5,7 @@ minimal web framerwork inspired by express.js for deno
 
 ``` ts
 import * as delight from "https://deno.land/x/delight@1.0.0-beta/app.ts";
-import Router import * as delight from "https://deno.land/x/delight@1.0.0-beta/router.ts";
+import Router from "https://deno.land/x/delight@1.0.0-beta/router.ts";
 
 
 
