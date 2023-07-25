@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.136.0/testing/asserts.ts";
 import   App from "../app.ts";
 import  Router  from "../router.ts";
+import { req } from "../utils.js/utils_router.ts";
 
 Deno.test({name:"App router",fn: async  (t) =>{
 
@@ -14,20 +15,20 @@ return new Response("hello world",{headers:{"content-type":"text/plain"}})
 
 })
 
-app.get("/users/:name",(req:any)=>{
+app.get("/users/:name",(req)=>{
 
-return new Response(`hello ${req.params.name}`)
+return new Response(`hello ${req?.params?.name}`)
 
 
 })
 
-app.get("/:id/admin",(req:any)=>{
+app.get("/:id/admin",(req)=>{
 
     
-    return new Response(`hello ${req.params.id} admin`)
+    return new Response(`hello ${req?.params?.id} admin`)
 })
 
-app.post("/registre",async (req:Request)=>{
+app.post("/registre",async (req:req)=>{
 
 const {name,age} = await req.json()
 
@@ -36,8 +37,8 @@ return new Response(`registro completado name:${name}  age:${age}`,{status:201})
 
 })
 
-app.post("/registre/:type",async (req:any)=>{
-   
+app.post("/registre/:type",async (req:req)=>{
+   if(!req.params) return new Response("no params",{status:400})
     const {type} = req.params
     
     const {name,age} = await req.json()
@@ -47,7 +48,7 @@ app.post("/registre/:type",async (req:any)=>{
 
 })
 
-router.get("/",(req:any)=>{
+router.get("/",(_req)=>{
 
 
 
@@ -61,7 +62,7 @@ return new Response("son router",{headers:{"content-type":"text/plain"}})
 
 
 
-router.get("/root",(_req:any)=>{
+router.get("/root",(_req)=>{
    
     
     return new Response("son router admin",{headers:{"content-type":"text/plain"}})

@@ -138,8 +138,8 @@ function GenerateRegex(expresion:string){
 export  interface req extends Request{
 
 
-params : {[key:string]:string}
-child :  boolean
+params ?: {[key:string]:string}
+child ?:  boolean
 
 
 

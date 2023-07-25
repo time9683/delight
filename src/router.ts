@@ -1,15 +1,15 @@
 // deno-lint-ignore-file ban-types
 import {readableStreamFromReader} from "https://deno.land/std@0.135.0/streams/mod.ts" 
-import  {PageError,analizeUrlParams,getMimeType,regexFile} from "./utils.js/utils_router.ts"
+import  {PageError,analizeUrlParams,getMimeType,regexFile, extractFile} from "./utils.js/utils_router.ts"
 import  streamingVideo from "./video.ts"
-
-
+import  * as path  from "https://deno.land/std@0.180.0/path/mod.ts"
+import type { req } from "./utils.js/utils_router.ts"
 
 /** function with execute previus  entry point 
  * @param {Request} req
  */
 interface midleware {
-    (req:Request,next:()=>void):void | undefined | Response
+    (req:req,next:()=>void):void | undefined | Response
 }
 
 interface  entryPoint {
@@ -44,11 +44,12 @@ export default class Router {
 
 routes: { [GET:string]: Array<entryPoint>; POST: Array<entryPoint>; DELETE: Array<entryPoint>; PUT: Array<entryPoint>;  };
 private static : string
-
+private to : string
 
 constructor(){
 this.routes = {GET:[],POST:[],DELETE:[],PUT:[]};  
 this.static =  "/public"
+this.to =  '/public'
 }
 
 
@@ -62,7 +63,7 @@ this.static =  "/public"
  * 
  * 
 */
-get = (url : string,callback : Function | Router ,midleware?:midleware)  =>{
+get = (url : string,callback : ((req:req)=> Response | Promise<Response>) | Router ,midleware?:midleware)  =>{
 this.routes.GET.push({path:url,callback,midleware})
 }
 /** add new entry point to the router in the post method 
@@ -71,7 +72,7 @@ this.routes.GET.push({path:url,callback,midleware})
  * @param {string} url - url to  define entry point  request
  * @param {Function} callback - callback function to execute when the url is requested
  */
-post = (url : string,callback : Function | Router, midleware?:midleware) =>{
+post = (url : string,callback : ((req:req)=> Response  | Promise<Response>)| Router, midleware?:midleware) =>{
 this.routes.POST.push({path:url,callback,midleware})
 }
 
@@ -85,7 +86,7 @@ this.routes.POST.push({path:url,callback,midleware})
  * 
  * 
 */
-delete = (url : string,callback : Function,midleware?:midleware) =>{
+delete = (url : string,callback : ((req:req)=> Response | Promise<Response>) | Router,midleware?:midleware) =>{
 this.routes.DELETE.push({path:url,callback,midleware})
 }
 
@@ -100,7 +101,7 @@ this.routes.DELETE.push({path:url,callback,midleware})
  * 
  * 
 */
-put = (url : string,callback : Function,midleware?:midleware) =>{
+put = (url : string,callback : ((req:req)=> Response | Promise<Response>) | Router,midleware?:midleware) =>{
 this.routes.PUT.push({path:url,callback,midleware:midleware})
 }
 
@@ -112,13 +113,14 @@ this.routes.PUT.push({path:url,callback,midleware:midleware})
  * @returns {Response} - response object
  *  
  *   */ 
-  resolve = async (req:any) : Promise<Response> =>{
+  resolve = async (req:req) : Promise<Response> =>{
 
 
 /**
  * is a pathname of the request
  */
 let url = new URL(req.url).pathname
+
 
 if(req.child === true && req.child !== undefined){
     url =  url.split("/")[2] === undefined ? "/" :  "/" + url.split("/")[2] 
@@ -132,25 +134,30 @@ const listroute = this.routes[req.method]
 
 
 
+
 if(!listroute) return new Response("Method not allowed",{status:405})
 
-
 if(req.method == "GET"){
-if(regexFile.test(url) &&  ( ("/"+ url.split('/')[1] ===   this.static)  || this.static === '' || this.static === '/')){
+
+    if(regexFile.test(url) &&  ((url.split("/")[0] == '' && this.to == '/') ||  url.split("/")[1] ==  this.to) ){
+
 try{
+
+        const fileUrl  =   extractFile(url,this.to)
         const mimeType =  getMimeType(url)
+        const urlforFile =  path.join(this.static,fileUrl)
       
         
 
         if(mimeType.includes("video")){
             return  streamingVideo(req,url)
         }
-    const file = await Deno.open(`.${url}`,{read:true})
+    const file = await Deno.open(urlforFile,{read:true})
     const readable =  readableStreamFromReader(file) 
     return new  Response(readable,{status:200,headers:{"content-type":mimeType}})
 
 }catch{
- 
+
 console.error(`%cError 404: File not found ${url}`, "color: red")
 return new Response("",{status:404})
 
@@ -179,7 +186,6 @@ for (const route of  listroute) {
 const {path,callback,midleware} = route
 
 if(callback instanceof Router)
-
 {
 const urlsplit = url.split("/")
 if(urlsplit.length > 2){ 
@@ -191,6 +197,8 @@ url = urlsplit.join("/")
 
 const {isCorrect,params} = analizeUrlParams(url,path)
 
+
+
 if(!isCorrect ){
  continue   
 }
@@ -199,7 +207,7 @@ if(!isCorrect ){
 if(isCorrect){
 
 if(callback instanceof Router){
-   Object.assign(req,{child:true})
+    Object.assign(req,{child:true})
     return callback.resolve(req)
 }
 
@@ -216,6 +224,7 @@ if(info instanceof Response){
 }
 const  res =   await  callback(req,()=>{})
 if(res instanceof Response){
+    console.log(`%c${req.method}%c:${req.url}`,'color:green','color:gray')
 return res
 }
 continue
@@ -223,6 +232,8 @@ continue
 
 } 
 
+
+console.log(`%c${req.method}:%c${req.url}`,'color:gray',"color:red")
 return PageError()
 
 
@@ -232,7 +243,7 @@ return PageError()
 
 
 
-use(path:string  ,callback:Function | Router ){
+use(path:string  ,callback: ((req:Request)=> Response ) | Router){
 
 this.get(path,callback)
 this.post(path,callback)
@@ -242,12 +253,13 @@ this.post(path,callback)
 /**set the path for static files,the value initial is public
  * 
  * @param {string} url -  to  define  path
- */
+   @param {string} to - to define access point to the static
+*/
 
-fixed(url:string){
+fixed(url:string,to:string){
 
 this.static = url
-
+this.to = to
 
 
 }
