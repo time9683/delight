@@ -37,7 +37,7 @@ export  const PageError = (): Response =>  {
      * @param ruta 
      * @returns  {isCorrect:boolean,params:object}
      */
- export   const analizeUrlParams = (url:string,ruta:string) : {[key:string] : {}  ,isCorrect : boolean}   => {        
+ export   const analizeUrlParams = (url:string,ruta:string) : { params: { [key:string]:string}  ,isCorrect : boolean}   => {        
         
      const regex =   GenerateRegex(ruta)
 
@@ -139,7 +139,7 @@ export  interface req extends Request{
 
 
 params : {[key:string]:string}
-
+child :  boolean
 
 
 
