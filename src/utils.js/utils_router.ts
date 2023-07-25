@@ -37,63 +37,19 @@ export  const PageError = (): Response =>  {
      * @param ruta 
      * @returns  {isCorrect:boolean,params:object}
      */
- export   const analizeUrlParams = (url:string,ruta:string) : {[key:string] : {}  ,isCorrect : boolean}   => {
-    
-    
-        const urlsplit = url.split("/")
-        const rutasplit = ruta.split("/")
-        const params : {[key:string] : string } = {};
-        let isCorrect = true;
-        if(rutasplit[1].includes(":") && (rutasplit.length === urlsplit.length) || (ruta  ==  '/:') ){
-         
-            const paramName = rutasplit[1].split(":")[1]
-            params[paramName] = urlsplit[1]
-            for(let i = 1; i < rutasplit.length; i++){
-                if(rutasplit[i] == urlsplit[i]){
-                    continue
-                }else if(rutasplit[i].includes(":")){
-                    const paramName = rutasplit[i].split(":")[1]
-                    params[paramName] = urlsplit[i]
-                }else{
-                    isCorrect = false
-                    break
-                }
-            }
-            if(isCorrect){
-                return {params:params,isCorrect}
-            }
-    
-    
-    
-    
-    
-        }else if(rutasplit[1] == urlsplit[1] && rutasplit.length === urlsplit.length){
-            
-            for(let i = 1; i < rutasplit.length; i++){
-                if(rutasplit[i] == urlsplit[i]){
-                    continue
-                }else if(rutasplit[i].includes(":")){
-                    const paramName = rutasplit[i].split(":")[1]
-                    params[paramName] = urlsplit[i]
-                }else{
-                    
-                    isCorrect = false
-                    break
-                }
-            }
-            if(isCorrect){
-               
-                return {params:params,isCorrect}
-           
-            }
-    
-        }
-        return {params:{},isCorrect:false}
-    
-    
-    
-     
+ export   const analizeUrlParams = (url:string,ruta:string) : {[key:string] : {}  ,isCorrect : boolean}   => {        
         
+     const regex =   GenerateRegex(ruta)
+
+        // verifica si la url coincide con la ruta
+    
+        if (!regex.test(url)) return  {params:{},isCorrect:false}
+        //busca parametros en la ruta
+        const  Result =  regex.exec(url)
+        // si no hay parametros retonar url correcta pero sin parametros
+        if(Result === null ||  Result.groups == undefined) return {params:{},isCorrect:true}
+        // y si hay retorna dichos parametros
+        return {params:Result.groups,isCorrect:true}
         }
 
 
@@ -135,3 +91,57 @@ const mimeTypes : {[key:string] : string}  = {
 
 
 export const regexFile = /\.([a-zA-Z0-9]+)$/
+
+
+export function extractFile(url: string,to:string){
+
+if(to == '/' ){
+
+    return  url.split('/').slice(1).join('/')
+}
+
+return  url.split('/').slice(2).join("/")
+
+
+
+
+
+}
+
+
+
+
+function GenerateRegex(expresion:string){
+    let newExpresion = expresion
+    if(newExpresion == "/"){
+       return new RegExp("^/$")
+    }
+    
+    const a : RegExpMatchArray | null = expresion.match(/(:\w+)/g)
+    if(a == null){
+    return new RegExp("^"+newExpresion+"$")
+    }
+
+    
+    a.forEach((elementos)=>{
+    console.log(elementos)
+    newExpresion =  newExpresion.replace(elementos, "(?<"+elementos.replace(":","")+">[A-Za-z0-9]+)")
+    
+    })
+    
+    return new RegExp("^"+newExpresion+"$")
+    
+    }
+
+
+
+export  interface req extends Request{
+
+
+params : {[key:string]:string}
+
+
+
+
+
+}  
